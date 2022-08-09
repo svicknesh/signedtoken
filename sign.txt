@@ -1,0 +1,66 @@
+package signedtoken
+
+import (
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/rand"
+	"crypto/rsa"
+	"encoding/asn1"
+	"encoding/json"
+	"fmt"
+	"math/big"
+
+	"github.com/lestrrat-go/jwx/jwk"
+)
+
+// ecdsasig - ecdsa encoding using ASN.1
+type ecdsasig struct {
+	R, S *big.Int
+}
+
+// Sign - signs the given input with the given JWK RSA or ECDSA private key
+func Sign(j *JWK, hashed []byte) (sig []byte, err error) {
+
+	// convert JWK to private key
+
+	jwkBytes, err := json.Marshal(j)
+	if nil != err {
+		return nil, fmt.Errorf("sign: %w", err)
+	}
+
+	var rawkey interface{}
+	var rsaPrivKey *rsa.PrivateKey
+	var ecPrivKey *ecdsa.PrivateKey
+	var ok bool
+
+	key, err := jwk.ParseKey(jwkBytes)
+	if err != nil {
+		return nil, fmt.Errorf("sign: %w", err)
+	}
+
+	if err = key.Raw(&rawkey); err != nil {
+		return nil, fmt.Errorf("sign: %w", err)
+	}
+
+	rsaPrivKey, ok = rawkey.(*rsa.PrivateKey)
+	if ok {
+		// we found the RSA private key
+		// RSA is always signed using SHA2-256
+		return rsa.SignPKCS1v15(rand.Reader, rsaPrivKey, crypto.SHA256, hashed)
+	}
+
+	// if not try ECDSA private key
+	ecPrivKey, ok = rawkey.(*ecdsa.PrivateKey)
+	if ok {
+		// we found the ECDSA private key
+		var encode ecdsasig
+		encode.R, encode.S, err = ecdsa.Sign(rand.Reader, ecPrivKey, hashed)
+		if nil != err {
+			return nil, fmt.Errorf("sign: %w", err)
+		}
+
+		return asn1.Marshal(encode)
+	}
+
+	return nil, fmt.Errorf("sign: no valid private key found")
+}
