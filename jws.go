@@ -106,7 +106,7 @@ func GenerateJWSWithAlg(j *JWK, payload []byte) (jwsBytes []byte, err error) {
 }
 
 // VerifyJWS - verifies a given JWS input
-func VerifyJWS(j *JWK, jwsBytes []byte, alg jwa.SignatureAlgorithm) (payload []byte, err error) {
+func VerifyJWS(j *JWK, jwsBytes []byte) (payload []byte, err error) {
 
 	jwkBytes, err := json.Marshal(j)
 	if nil != err {
@@ -118,6 +118,7 @@ func VerifyJWS(j *JWK, jwsBytes []byte, alg jwa.SignatureAlgorithm) (payload []b
 	var pubKey interface{}
 	var ecPrivKey *ecdsa.PrivateKey
 	var ok bool
+	var sigAlg jwa.SignatureAlgorithm
 
 	key, err := jwk.ParseKey(jwkBytes)
 	if err != nil {
@@ -136,6 +137,17 @@ func VerifyJWS(j *JWK, jwsBytes []byte, alg jwa.SignatureAlgorithm) (payload []b
 
 		pubKey = ecPrivKey.PublicKey
 
+		switch j.Crv {
+		case "P-256":
+			sigAlg = jwa.ES256
+		case "P-384":
+			sigAlg = jwa.ES384
+		case "P-521":
+			sigAlg = jwa.ES512
+		default:
+			return nil, fmt.Errorf("generatejws: unsupported EC curve %s", j.Crv)
+		}
+
 	} else if j.Kty == "RSA" {
 
 		var rsaPrivKey *rsa.PrivateKey
@@ -146,11 +158,13 @@ func VerifyJWS(j *JWK, jwsBytes []byte, alg jwa.SignatureAlgorithm) (payload []b
 
 		pubKey = rsaPrivKey.PublicKey
 
+		sigAlg = jwa.RS256 // we always use SHA-256 for RSA keys
+
 	} else {
 		return nil, fmt.Errorf("unsupported key type %s", j.Kty)
 	}
 
-	payload, err = jws.Verify(jwsBytes, jwa.SignatureAlgorithm(alg), pubKey)
+	payload, err = jws.Verify(jwsBytes, jwa.SignatureAlgorithm(sigAlg), pubKey)
 
 	return
 }

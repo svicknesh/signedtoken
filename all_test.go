@@ -133,7 +133,7 @@ func TestJWS(t *testing.T) {
 	*/
 
 	//payload, err := VerifyJWS(privateECJWK, jwtBytes, jwa.SignatureAlgorithm(h.Alg))
-	payload, err := VerifyJWS(privateECJWK, jwtBytes, ES256)
+	payload, err := VerifyJWS(privateECJWK, jwtBytes)
 	if nil != err {
 		log.Println(err)
 		os.Exit(1)
