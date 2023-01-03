@@ -7,10 +7,9 @@ Golang library to created signed tokens for whatever use case you may think off.
 - and so many other ideas ...
 
 
-## Usage
+## Signing and verifying messages
 
 ### ECDSA signing and verification
-
 ```go
 
 // generate public and private ECDSA key
@@ -52,7 +51,6 @@ if nil != err {
 
 
 ### RSA signing and verification
-
 ```go
 
 // generate public and private RSA key
@@ -89,5 +87,97 @@ if nil != err {
 } else {
     fmt.Println("RSADSA signature matches")
 }
+
+```
+
+
+## Creating and verifying JSON Web Signature (JWS)
+
+### Creating and verifying ECDSA JWS
+```go
+// generate public and private ECDSA key
+
+// convert an ECDSA private key to this library's `JWK` format before using.
+privateECJWK, err := signedtoken.New(privateKey)
+if nil != err {
+    log.Println(err)
+    os.Exit(1)
+}
+
+type input struct {
+    Subject   string `json:"sub,omitempty"`
+    Audience  string `json:"aud,omitempty"`
+    IssuedAt  int64  `json:"iat,omitempty"`
+    NotBefore int64  `json:"nbf,omitempty"`
+    Expire    int64  `json:"exp,omitempty"`
+}
+
+i := new(input)
+
+i.IssuedAt = time.Now().UTC().Unix()
+i.NotBefore = i.IssuedAt
+i.Expire = time.Now().AddDate(1, 0, 0).UTC().Unix()
+i.Audience = "me"
+i.Subject = "supersubject"
+
+iBytes, _ := json.Marshal(i)
+
+jwtBytes, err := GenerateJWSWithAlg(privateECJWK, iBytes)
+if nil != err {
+    log.Println(err)
+    os.Exit(1)
+}
+
+payload, err := VerifyJWS(privateECJWK, jwtBytes)
+if nil != err {
+    log.Println(err)
+    os.Exit(1)
+}
+fmt.Println(string(payload))
+
+```
+
+
+### Creating and verifying RSA JWS
+```go
+// generate public and private ECDSA key
+
+// convert an RSA private key to this library's `JWK` format before using.
+privateRSAJWK, err := New(privateKey)
+if nil != err {
+    log.Println(err)
+    os.Exit(1)
+}
+
+type input struct {
+    Subject   string `json:"sub,omitempty"`
+    Audience  string `json:"aud,omitempty"`
+    IssuedAt  int64  `json:"iat,omitempty"`
+    NotBefore int64  `json:"nbf,omitempty"`
+    Expire    int64  `json:"exp,omitempty"`
+}
+
+i := new(input)
+
+i.IssuedAt = time.Now().UTC().Unix()
+i.NotBefore = i.IssuedAt
+i.Expire = time.Now().AddDate(1, 0, 0).UTC().Unix()
+i.Audience = "me"
+i.Subject = "supersubject"
+
+iBytes, _ := json.Marshal(i)
+
+jwtBytes, err := GenerateJWSWithAlg(privateRSAJWK, iBytes)
+if nil != err {
+    log.Println(err)
+    os.Exit(1)
+}
+
+payload, err := VerifyJWS(privateRSAJWK, jwtBytes)
+if nil != err {
+    log.Println(err)
+    os.Exit(1)
+}
+fmt.Println(string(payload))
 
 ```
