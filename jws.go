@@ -73,7 +73,7 @@ func GenerateJWS(j *JWK, payload []byte) (jwsBytes []byte, err error) {
 }
 
 // GenerateJWSWithAlg - generates a new JWS from the given input using the given algorithm
-func GenerateJWSWithAlg(j *JWK, payload []byte, alg jwa.SignatureAlgorithm) (jwsBytes []byte, err error) {
+func GenerateJWSWithAlg(j *JWK, payload []byte) (jwsBytes []byte, err error) {
 
 	set, _ := jwk.Parse([]byte(j.String()))
 	//privKey, _ := set.LookupKeyID(keyidAttr.KeyID)

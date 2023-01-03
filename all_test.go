@@ -117,7 +117,7 @@ func TestJWS(t *testing.T) {
 	iBytes, _ := json.Marshal(i)
 
 	//jwtBytes, err := GenerateJWS(privateECJWK, iBytes)
-	jwtBytes, err := GenerateJWSWithAlg(privateECJWK, iBytes, ES256)
+	jwtBytes, err := GenerateJWSWithAlg(privateECJWK, iBytes)
 	if nil != err {
 		log.Println(err)
 		os.Exit(1)
