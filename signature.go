@@ -3,10 +3,12 @@ package signedtoken
 import (
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/asn1"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -29,9 +31,6 @@ func Sign(j *JWK, hashed []byte) (sig []byte, err error) {
 	}
 
 	var rawkey interface{}
-	//var rsaPrivKey *rsa.PrivateKey
-	//var ecPrivKey *ecdsa.PrivateKey
-	//var ok bool
 
 	key, err := jwk.ParseKey(jwkBytes)
 	if err != nil {
@@ -67,6 +66,14 @@ func Sign(j *JWK, hashed []byte) (sig []byte, err error) {
 		// we found the RSA private key
 		// RSA is always signed using SHA2-256
 		return rsa.SignPKCS1v15(rand.Reader, rsaPrivKey, crypto.SHA256, hashed)
+
+	case "OKP":
+		ed25519PrivKey, ok := rawkey.(ed25519.PrivateKey)
+		if !ok {
+			return nil, fmt.Errorf("sign: invalid ED25519 private key found")
+		}
+
+		return ed25519.Sign(ed25519PrivKey, hashed), nil
 
 	}
 
@@ -129,8 +136,21 @@ func Verify(j *JWK, hashed, sig []byte) (err error) {
 		// RSA is always signed using SHA2-256
 		return rsa.VerifyPKCS1v15(rsaPubKey, crypto.SHA256, hashed, sig)
 
+	case "OKP":
+
+		ed25519PubKey, ok := rawkey.(ed25519.PublicKey)
+		if !ok {
+			return fmt.Errorf("sign: invalid ED25519 public key found")
+		}
+
+		if ok := ed25519.Verify(ed25519PubKey, hashed, sig); !ok {
+			err = errors.New("verify: ED25519 signature verification failed")
+		}
+
+		return
+
 	}
 
-	return fmt.Errorf("sign: no valid private key found")
+	return fmt.Errorf("sign: no valid public key found")
 
 }

@@ -1,6 +1,6 @@
 module github.com/svicknesh/signedtoken
 
-go 1.17
+go 1.20
 
 require (
 	github.com/lestrrat-go/jwx v1.2.25

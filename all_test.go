@@ -12,6 +12,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"golang.org/x/crypto/ed25519"
 )
 
 func TestSign(t *testing.T) {
@@ -139,5 +141,48 @@ func TestJWS(t *testing.T) {
 		os.Exit(1)
 	}
 	fmt.Println(string(payload))
+
+}
+
+func TestSignED25519(t *testing.T) {
+
+	hashed1 := sha256.Sum256([]byte("hello world")) // RSA only accepts SHA2-256 but ECDSA can use anything, including SHA3
+
+	// try EC key
+
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if nil != err {
+		log.Println(err)
+		os.Exit(1)
+	}
+
+	privateJWK, err := New(privateKey)
+	if nil != err {
+		log.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println(privateJWK.String())
+
+	sigED25519, err := Sign(privateJWK, hashed1[:]) // input must be a sha256 hashed message
+	if nil != err {
+		log.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println(sigED25519)
+
+	publicJWK, err := New(publicKey)
+	if nil != err {
+		log.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println(publicJWK.String())
+
+	err = Verify(publicJWK, hashed1[:], sigED25519)
+	if nil != err {
+		log.Println(err)
+		os.Exit(1)
+	} else {
+		fmt.Println("ED25519 signature matches")
+	}
 
 }
