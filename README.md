@@ -1,3 +1,7 @@
+# DEPRECATED - **DO NOT USE**
+- For key generation use `github.com/svicknesh/key/v2`
+- For signature generation and verification use `github.com/svicknesh/signature`
+
 # Signed Token
 
 Golang library to created signed tokens for whatever use case you may think off. Some of the potential use cases are
